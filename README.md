@@ -1,2 +1,2 @@
-# ARCKG-Symbolic-Solver
-Symbolic solver of Abstraction and Reasoning Corpus (ARC) using ARC Knowledge Graph.
+# ARCKG-NeuroSymbolic-Solver
+NeuroSymbolic solver of Abstraction and Reasoning Corpus (ARC) using ARC Knowledge Graph.
