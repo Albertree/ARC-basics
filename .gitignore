@@ -176,7 +176,9 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 
-
+data/thumbnails/
+data/full/
+data/without_answer/
 
 
 
