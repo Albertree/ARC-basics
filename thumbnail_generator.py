@@ -4,9 +4,9 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from ARCLOADER import *
+from basics.ARCLOADER import *
 
-settings = json.load(open('settings.json', 'r'))
+settings = json.load(open('./basics/settings.json', 'r'))
 colors_rgb = settings['colors_rgb']
 
 #############################################################################################
@@ -253,11 +253,12 @@ if __name__ == "__main__":
     # 3. 'full_wihout_answer'   : entire task without the answer (test grid have purple grid lines)
 
 
-    image_gen(type = 'train', mode = 'thumbnail')
-    image_gen(type = 'eval', mode = 'thumbnail')
+    # image_gen(type = 'train', mode = 'thumbnail')
+    # image_gen(type = 'eval', mode = 'thumbnail')
 
-    image_gen(type = 'train', mode = 'full')
-    image_gen(type = 'eval', mode = 'full')
+    # image_gen(type = 'train', mode = 'full')
+    # image_gen(type = 'eval', mode = 'full')
 
-    image_gen(type = 'train', mode = 'full_without_answer')
-    image_gen(type = 'eval', mode = 'full_without_answer')
+    # image_gen(type = 'train', mode = 'full_without_answer')
+    # image_gen(type = 'eval', mode = 'full_without_answer')
+    print("this is thumbnail generator file")
