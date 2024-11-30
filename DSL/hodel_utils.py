@@ -23,3 +23,13 @@ def togrid(data): # list of tuples [(color, (row, col))]
         grid[row - min_row][col - min_col] = color_index
 
     return grid
+
+
+# for print
+def forprint(data):
+    if len(data) < 2:
+        print(data)
+    for row in data:
+        print(row)
+    print()
+    

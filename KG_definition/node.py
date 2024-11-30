@@ -1,154 +1,260 @@
+from DSL.hodel_utils import *
 
-### Previous version of node definition #########################################
+class Pnode():
+    def __init__(self, Gnode, row, col):
+        self.id = row * Gnode.width + col + 1
+        # self.io = "Input"
+        self.type = "pixel"
+        self.row = self.get_row(row)
+        self.col = self.get_col(col)
+        self.coord = self.get_coord() 
+        self.color = self.get_color(Gnode, row, col) # -> grid[0][0][0] 
 
-class Pnode :
-    def __init__(self, grid, i, j):
-        self.color = grid[i][j]
-        self.number = self.node_number(len(grid[0]), i, j)
-        self.visual_coord = [3 * j, 3 * (len(grid) - i - 1)]  ## coordinate for visualize
-        self.coordinate = [j,i]         ## coordinate from the grid
-        self.input = 0
-        self.output = 0
-        self.type = "Pnode"
-    def node_number (self, col, i, j): ## start from 0 to (col * row -1) # may not needed
-        temp = i * (col) + j
-        return temp
+        # characteristic that could be found in pixel-wise observation
+        # self.diff_color_neighbors = get_diff_color
+    
+    def get_row(self, row):
+        return row
+    
+    def get_col(self, col):
+        return col
+    
+    def get_coord(self):
+        return (self.row, self.col)
+
+    def get_color(self, Gnode, row, col):
+        return Gnode.grid[row][col]
+    
     def __str__(self):
-        if self.input == 1:
-            return f"Pnode: N:{self.number}, I"
-        else :
-            return f"Pnode: N:{self.number}, O"
+        return f"{self.type} node, id = {self.id}, coord = {self.coord}, color = {self.color}"
+
+
+
+
+
+
+class Onode():
+    def __init__(self, Gnode, o, object):
+        self.id = Gnode.width * Gnode.height + o + 1
+        self.type = "object"
+        self.colcoord = object
+        self.grid = self.get_grid()
+        self.color = self.get_color(object) # -> (0, 1, 2, 5, 6)
+        self.single_colored = self.is_single_color() # -> False
+        self.coords = self.get_coord() # -> frozenset({(0,0), (0,1), ... (8,8)})
+        self.bbox = self.get_bbox() # -> [(0,0), (9,9)]
+        self.size = self.get_bbox_size() # -> (9, 9)
+        self.height = self.get_bbox_height() # -> 9
+        self.width = self.get_bbox_width() # -> 9
+        self.relative_coord = self.get_relative_coord() # -> [(0,0), (0,1), ... (8,8)]
+        self.relative_colcoord = self.get_relative_colcoord() # -> frozenset({(0,0), (0,1), ... (8,8)})
         
-class Onode:
-    def __init__(self, obj, condition):
-        Pnode_list = []
+        self.hori_symm = self.is_hori_symmetric() # -> True
+        self.verti_symm = self.is_verti_symmetric() # -> True
+
+        self.margin_coord = self.get_margin_coord() # margin(ring shape)
+        self.inner_coord = self.get_inner_coord() # nonmargin
+        self.corner_coord = self.get_corner_coord() # corner
+        self.edge_coord = self.get_edge_coord() # edge
+        
+        self.center = self.get_center() # four types of center of mass expression
+
+
+        ## do it later
+        # self.diag_symm = self.is_diag_symmetric() # -> True
+        # self.rdiag_symm = self.is_rdiag_symmetric() # -> True
+
+        # self.rectangle = self.is_rectangle() # -> True
+        # self.square = self.is_square() # -> True
+        # self.cross = self.is_cross() # -> True
+        # self.ring = self.is_ring() # -> True
+        # self.shape = self.get_shape(Gnode) # can be unique besides square, bar, cross, ring # need definition
+
+    def get_grid(self):
+        return togrid(self.colcoord)
+
+    def get_color(self, object):
         color_set = set()
-        number_set = set()
-        for Pnode in obj:
-            Pnode_list.append(Pnode)
-            color_set.add(Pnode.color)
-            number_set.add(Pnode.number)
-        self.Pnode_list = Pnode_list
-        self.color = color_set            ##questionalbe 
-        self.number = number_set  
-        self.coordinate = [0,0]
-        self.input = 0
-        self.output = 0
-        self.type = "Onode"
-        self.condition = condition
-        # [get_coordinate(node) for node in get_center_nodes]    ##questionalbe -> need bbox function first and type will be {(int, int), (int, int) ...}
-    def __str__(self):
-        pnodes = []
-#        for pnode in self.Pnode_list:
-#            pnodes.append(pnode.__str__())
-        if self.input == 1:
-            return f"Onode: N:{self.number}, I"
-        else :
-            return f"Onode: N:{self.number}, O"
+        for colcoord in object:
+            color_set.add(colcoord[0])
+        return color_set
     
-class Gnode:
-    def __init__(self, node_list): # node_list should contain all the Pnode and Onode from the grid
-        self.Node_list = node_list
-        color_s = set()
-        Pnode_list = []
-        Onode_list = []
-        for n in node_list:
-            if isinstance(n, Pnode):
-                color_s.add(n.color)
-                Pnode_list.append(n)
-            elif isinstance(n, Onode):
-                Onode_list.append(n)
-        self.color = color_s
-        self.Pnode_list = Pnode_list
-        self.Onode_list = Onode_list
-        self.coordinate = [0,0]
-        self.number = 0
-        self.input = 0
-        self.output = 0
-        self.type = "Gnode"
-        self.condition = "Gnode"
-        # [get_coordinate(node) for node in get_center_nodes]       ## questionable # do we need coornidate for Gnode?
-    def __str__(self):
-        if self.input == 1:
-            return f"Gnode: N:{self.number}, I"
-        else :
-            return f"Gnode: N:{self.number}, O"
+    def is_single_color(self):
+        return True if len(self.color) == 1 else False
+    
+    def get_coord(self):
+        coord_list = []
+        for colcoord in self.colcoord:
+            coord_list.append(colcoord[1])
+        return coord_list
+    
+    def get_bbox(self):
+        row_list = []
+        col_list = []
+        for colcoord in self.colcoord:
+            row_list.append(colcoord[1][0])
+            col_list.append(colcoord[1][1])
+        return [(min(row_list), min(col_list)), (max(row_list), max(col_list))]
+    
+    def get_bbox_size(self):
+        return (self.bbox[1][0] - self.bbox[0][0] + 1, self.bbox[1][1] - self.bbox[0][1] + 1)
+    
+    def get_bbox_height(self):
+        return self.size[0]
+    
+    def get_bbox_width(self):
+        return self.size[1]
+    
+    def get_relative_coord(self):
+        relative_coord = []
+        for coord in self.coords:
+            relative_coord.append((coord[0] - self.bbox[0][0], coord[1] - self.bbox[0][1]))
+        return relative_coord
 
-class Vnode:
-    def __init__(self, Gnode1, Gnode2): # node_list should contain all the Pnode and Onode from the grid
-        self.Gnode_list = [Gnode1, Gnode2]
-        self.type = "Vnode"
-        self.input = 0
-        self.output = 0
-        self.color = Gnode1.color.union(Gnode2.color)
-        self.Onode_list = [node for node in Gnode1.Onode_list] + [node for node in Gnode2.Onode_list]
-        self.Pnode_list = [node for node in Gnode1.Pnode_list] + [node for node in Gnode2.Pnode_list]
+    def get_relative_colcoord(self):
+        relative_colcoord = []
+        for colcoord in self.colcoord:
+            relative_colcoord.append((colcoord[0], (colcoord[1][0] - min(self.coords)[0], colcoord[1][1] - min(self.coords)[1])))
+        return relative_colcoord
+
+    def is_hori_symmetric(self):
+        hori_symm = True
+        top_half = self.grid[:self.height // 2]
+        bottom_half = self.grid[-(self.height // 2):]
+        
+        if top_half != bottom_half[::-1]:  # Reverse bottom half for comparison
+            hori_symm = False
+        return hori_symm
+    
+    def is_verti_symmetric(self):
+        verti_symm = True
+        for row in self.grid:
+            left_half = row[:self.width // 2]
+            right_half = row[-(self.width // 2):]
+            if left_half != right_half[::-1]:  # Reverse right half for comparison
+                verti_symm = False
+                break
+        return verti_symm
+
+    def get_margin_coord(self):
+        margin_coord = []
+        for coord in self.relative_coord:
+            if coord[0] == 0 or coord[0] == self.height or coord[1] == 0 or coord[1] == self.width:
+                margin_coord.append(coord)
+        return margin_coord
+    
+    def get_inner_coord(self):
+        inner_coord = []
+        for coord in self.relative_coord:
+            if coord not in self.margin_coord:
+                inner_coord.append(coord)
+        return inner_coord
+    
+    def get_corner_coord(self):
+        corner_coord = []
+        for coord in self.relative_coord:
+            if coord == (0, 0) or coord == (0, self.width) or coord == (self.height, 0) or coord == (self.height, self.width):
+                corner_coord.append(coord)
+        return corner_coord
+        
+    def get_edge_coord(self):
+        edge_coord = []
+        for coord in self.relative_coord:
+            if coord in self.margin_coord and coord not in self.corner_coord:
+                edge_coord.append(coord)
+        return edge_coord
+
+    def get_center(self):
+        center = []
+        # even * even -> 2 * 2 center
+        if self.size[0] % 2 == 0 and self.size[1] % 2 == 0:
+            center.append((self.size[0] // 2-1, self.size[1] // 2-1))
+            center.append((self.size[0] // 2-1, self.size[1] // 2))
+            center.append((self.size[0] // 2, self.size[1] // 2-1))
+            center.append((self.size[0] // 2, self.size[1] // 2))
+            return center
+        
+        # even * odd -> 2 * 1 center
+        if self.size[0] % 2 == 0 and self.size[1] % 2 != 0:
+            center.append((self.size[0] // 2-1, self.size[1] // 2))
+            center.append((self.size[0] // 2, self.size[1] // 2))
+            return center
+
+        # odd * even -> 1 * 2 center
+        if self.size[0] % 2 != 0 and self.size[1] % 2 == 0:
+            center.append((self.size[0] // 2, self.size[1] // 2-1))
+            center.append((self.size[0] // 2, self.size[1] // 2))
+            return center
+        
+        # odd * odd -> 1 * 1 center
+        if self.size[0] % 2 != 0 and self.size[1] % 2 != 0:
+            center.append((self.size[0] // 2, self.size[1] // 2))
+            return center
+
+
     def __str__(self):
-        return f"Vnode"
+        return f"{self.type} node, id = {self.id}, color = {self.color}"
     
 
 
 
-	
 
-# EXAMPLE CODE for node design ########################################################
 
-# class Pnode():
-# 		def __init__(self, grid):
-# 				# DSL that only requires one argument -> self pointing edge == features of pixel
-# 				# each pixel represented like [[....[color, (coordx, coordy)]]]
-# 				self.color = get_color(pixel) # -> grid[0][0][0] 
-# 				self.coord = get_coord(pixel) # -> grid[0][0][1]
+class Gnode():
+    def __init__(self, grid):
+        self.id = 0
+        self.grid = grid
+        self.type = "grid"
+        
+        self.height = self.get_height(grid)
+        self.width = self.get_width(grid)
+        self.color = self.get_color(grid) # -> (0, 1, 2, 5, 6)
+        self.single_colored = self.is_single_color() # -> False
+        self.colcoord = self.get_colcoord()
+        self.size = self.get_size() # -> (9, 9)
+        
+    def get_height(self, grid):
+        return len(grid)
+    
+    def get_width(self, grid):
+        return len(grid[0])
+    
+    def get_color(self, grid):
+        color_set = set()
+        for row in grid:
+            color_set.update(set(row))
+        return color_set
+    
+    def is_single_color(self):
+        return True if len(self.color) == 1 else False
+        # a lot overlaping with Onode characteristics cuz Gnode is just a one kind of Onode.
+
+    def get_colcoord(self):
+        colcoord = []
+        for row in range(self.height):
+            for col in range(self.width):
+                colcoord.append((self.grid[row][col], (row, col)))
+        return frozenset(colcoord)
+    
+    def get_size(self):
+        return (self.height, self.width)
+    
+    def __str__(self):
+        return f"{self.type} node, id = {self.id}, size = {self.size}, color = {self.color}"
 				
-# 				# characteristic that could be found in pixel-wise observation
-# 				# self.diff_color_neighbors = get_diff_color
-				
-# class Onode():
-# 		def __init__(self, grid):
-# 				# DSLs that only requires one argument -> self pointing edge == features of object
-# 				self.color = get_color(grid) # -> (0, 1, 2, 5, 6)
-# 				self.single_colored = is_single_color(grid) # -> False
-# 				self.coord_list = get_coord_list(grid) # -> [(0,0), (0,1), ... (8,8)]
-# 				self.relative_coord = get_relative_coord(grid) # -> [(0,0), (0,1), ... (8,8)]
-# 				self.size = get_size(grid) # -> (9, 9)
-# 				self.height = get_height(grid) # -> 9
-# 				self.width = get_width(grid) # -> 9
-# 				...
-# 				self.hori_symm = is_hori_symmetric(grid) # -> True
-# 				self.verti_symm = is_verti_symmetric(grid) # -> True
-# 				self.rectangle = is_rectangle(grid) # -> True
-# 				self.square = is_square(grid) # -> True
-# 				...
-# 				self.bbox = get_bbox(grid) # -> [(0,0), (9,9)]
-# 				# conditional characteristic
-# 				if self.rectangle:
-# 						self.corner_list = get_corner_list() # corner
-# 						self.edge_list = get_edge_list(grid) # edge
-# 						self.margin_list = get_margin_list(grid) # margin(ring shape)
-# 						self.inner_list = get_inner_list(grid) # nonmargin
-# 						self.center_of_mass = get_center_of_mass(grid) # four types of center of mass expression
-# 				...
-				
-# 				self.shape = get_shape(grid) # can be unique besides square, bar, cross, ring # need definition
-				
-# class Gnode():
-# 		def __init__(self, grid):
-# 				self.color = get_color(grid) # -> (0, 1, 2, 5, 6)
-# 				self.single_colored = is_single_color(grid) # -> False
-# 				self.size = get_size(grid) # -> (9, 9)
-# 				self.height = get_height(grid) # -> 9
-# 				self.width = get_width(grid) # -> 9
-# 				...
-				
-# 				# a lot overlaping with Onode characteristics cuz Gnode is just a one kind of Onode.
-				
-				
+
+
+
+
+
+
+
 # class Vnode():
-# 		# Should Vnode take two grids or only one for node construction?
-# 		def __init__(self, inpt_grid, output_grid): # OR (self, grid)
-# 				# and what can be its characteristic?
-# 				self.
-				
+#     # Should Vnode take two grids or only one for node construction?
+#     def __init__(self, inpt_grid, output_grid): # OR (self, grid)
+#         # and what can be its characteristic?
+#         self.
+        
 
 
 

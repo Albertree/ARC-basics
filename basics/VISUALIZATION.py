@@ -1,7 +1,7 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from ARCLOADER import *
+# from .ARCLOADER import *
 
 settings = json.load(open('./basics/settings.json', 'r'))
 colors_rgb = settings['colors_rgb']
